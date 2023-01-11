@@ -41,13 +41,7 @@ sudo sed -i 's|xserverauthfile=\$HOME/.serverauth.\$\$|xserverauthfile=\$XAUTHOR
 
 # ------------------------------------------------------------------------
 
-echo
-echo "Configuring LTS Kernel as a secondary boot option"
 
-sudo cp /boot/loader/entries/arch.conf /boot/loader/entries/arch-lts.conf
-sudo sed -i 's|Arch Linux|Arch Linux LTS Kernel|g' /boot/loader/entries/arch-lts.conf
-sudo sed -i 's|vmlinuz-linux|vmlinuz-linux-lts|g' /boot/loader/entries/arch-lts.conf
-sudo sed -i 's|initramfs-linux.img|initramfs-linux-lts.img|g' /boot/loader/entries/arch-lts.conf
 
 # ------------------------------------------------------------------------
 
@@ -55,7 +49,7 @@ echo
 echo "Configuring MAKEPKG to use all 8 cores"
 
 sudo sed -i -e 's|[#]*MAKEFLAGS=.*|MAKEFLAGS="-j$(nproc)"|g' makepkg.conf
-sudo sed -i -e 's|[#]*COMPRESSXZ=.*|COMPRESSXZ=(xz -c -T 8 -z -)|g' makepkg.conf
+sudo sed -i -e 's|[#]*COMPRESSXZ=.*|COMPRESSXZ=(xz -c -T 2 -z -)|g' makepkg.conf
 
 # ------------------------------------------------------------------------
 
@@ -67,33 +61,6 @@ KEYMAP=us
 FONT=ter-v32b
 EOF
 
-# ------------------------------------------------------------------------
-
-echo
-echo "Setting laptop lid close to suspend"
-
-sudo sed -i -e 's|[# ]*HandleLidSwitch[ ]*=[ ]*.*|HandleLidSwitch=suspend|g' /etc/systemd/logind.conf
-
-# ------------------------------------------------------------------------
-
-echo
-echo "Disabling buggy cursor inheritance"
-
-# When you boot with multiple monitors the cursor can look huge. This fixes it.
-sudo cat <<EOF > /usr/share/icons/default/index.theme
-[Icon Theme]
-#Inherits=Theme
-EOF
-
-# ------------------------------------------------------------------------
-
-echo
-echo "Increasing file watcher count"
-
-# This prevents a "too many files" error in Visual Studio Code
-echo fs.inotify.max_user_watches=524288 | sudo tee /etc/sysctl.d/40-max-user-watches.conf && sudo sysctl --system
-
-# ------------------------------------------------------------------------
 
 echo
 echo "Disabling Pulse .esd_auth module"
@@ -113,11 +80,7 @@ sudo systemctl start bluetooth.service
 
 # ------------------------------------------------------------------------
 
-echo
-echo "Enabling the cups service daemon so we can print"
 
-systemctl enable org.cups.cupsd.service
-systemctl start org.cups.cupsd.service
 
 # ------------------------------------------------------------------------
 
@@ -128,29 +91,6 @@ sudo ntpd -qg
 sudo systemctl enable ntpd.service
 sudo systemctl start ntpd.service
 
-# ------------------------------------------------------------------------
-
-echo
-echo "NETWORK SETUP"
-echo
-echo "Find your IP Link name:"
-echo
-
-ip link
-
-echo
-read -p "ENTER YOUR IP LINK: " LINK
-
-echo
-echo "Disabling DHCP and enabling Network Manager daemon"
-echo
-
-sudo systemctl disable dhcpcd.service
-sudo systemctl stop dhcpcd.service
-sudo ip link set dev ${LINK} down
-sudo systemctl enable NetworkManager.service
-sudo systemctl start NetworkManager.service
-sudo ip link set dev ${LINK} up
 
 echo "Done!"
 echo 
